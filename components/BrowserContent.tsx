@@ -145,6 +145,13 @@ const BrowserContent: React.FC<BrowserContentProps> = ({ tab, onNavigate }) => {
           onError={() => setLoadError(true)}
        />
        
+       {/* Helper for blocked sites like GitHub */}
+       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <p className="bg-gray-900/80 text-white px-4 py-2 rounded-full text-xs backdrop-blur-md shadow-lg border border-white/10">
+             If the page is blank, the site blocks embedding. Try <b>AI View</b>.
+          </p>
+       </div>
+
        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity delay-1000">
           <p className="bg-black/75 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
              Real Site Mode
