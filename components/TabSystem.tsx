@@ -37,7 +37,7 @@ const TabSystem: React.FC<TabSystemProps> = ({
                 <div className={`w-3 h-3 rounded-full shrink-0 ${isActive ? 'bg-indigo-500' : 'bg-gray-400'}`}></div>
               )}
               <span className="truncate font-medium text-xs">
-                {tab.title || (tab.url === 'j-web://welcome' ? 'Welcome' : 'New Tab')}
+                {tab.title || (tab.url === 'j-zoom://welcome' ? 'Welcome' : 'New Tab')}
               </span>
             </div>
             

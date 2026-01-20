@@ -30,7 +30,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
   const [inputValue, setInputValue] = useState(url);
 
   useEffect(() => {
-    setInputValue(url === 'j-web://welcome' ? '' : url);
+    setInputValue(url === 'j-zoom://welcome' ? '' : url);
   }, [url]);
 
   const handleSubmit = (e: React.FormEvent) => {

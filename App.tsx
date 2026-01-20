@@ -11,7 +11,7 @@ const simpleId = () => Math.random().toString(36).substr(2, 9);
 // Helper to determine if input is a URL or search query
 const formatUrl = (input: string): string => {
   const trimmed = input.trim();
-  if (!trimmed || trimmed === 'j-web://welcome') return 'j-web://welcome';
+  if (!trimmed || trimmed === 'j-zoom://welcome') return 'j-zoom://welcome';
   
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     return trimmed;
@@ -26,7 +26,7 @@ const formatUrl = (input: string): string => {
 
 const getDisplayTitle = (url: string, content?: WebPageContent | null) => {
   if (content?.title) return content.title;
-  if (url === 'j-web://welcome') return 'Welcome';
+  if (url === 'j-zoom://welcome') return 'Welcome';
   try {
     const urlObj = new URL(url);
     return urlObj.hostname.replace('www.', '');
@@ -173,7 +173,7 @@ export default function App() {
           onNewTab={handleNewTab}
         />
         <AddressBar 
-          url={activeTab.url === 'j-web://welcome' ? '' : activeTab.url}
+          url={activeTab.url === 'j-zoom://welcome' ? '' : activeTab.url}
           isLoading={activeTab.isLoading}
           mode={activeTab.mode}
           onNavigate={navigateCurrent}

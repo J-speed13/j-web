@@ -17,7 +17,7 @@ const WelcomeScreen = ({ onSearch }: { onSearch: (q: string) => void }) => {
   return (
     <div className="flex flex-col items-center justify-center min-h-full bg-gray-50 text-gray-800 p-4">
       <div className="w-full max-w-2xl flex flex-col items-center animate-fade-in-up">
-        <h1 className="text-6xl font-bold text-indigo-600 mb-2 select-none tracking-tight">J-Web</h1>
+        <h1 className="text-6xl font-bold text-indigo-600 mb-2 select-none tracking-tight">J-Zoom</h1>
         <p className="text-xl text-gray-500 mb-10">The AI Browser Simulator</p>
         
         <form onSubmit={handleSubmit} className="w-full shadow-lg rounded-full mb-12 hover:shadow-xl transition-shadow duration-300 bg-white">
@@ -52,14 +52,14 @@ const WelcomeScreen = ({ onSearch }: { onSearch: (q: string) => void }) => {
 };
 
 const BrowserContent: React.FC<BrowserContentProps> = ({ tab, onNavigate }) => {
-  const isWelcome = tab.url === 'j-web://welcome' || tab.url === '';
+  const isWelcome = tab.url === 'j-zoom://welcome' || tab.url === '';
   const [loadError, setLoadError] = useState(false);
   const aiIframeRef = useRef<HTMLIFrameElement>(null);
 
   // Listen for navigation messages from the AI Iframe
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'JWEB_NAVIGATE') {
+      if (event.data?.type === 'JZOOM_NAVIGATE') {
         onNavigate(event.data.url);
       }
     };
@@ -80,7 +80,7 @@ const BrowserContent: React.FC<BrowserContentProps> = ({ tab, onNavigate }) => {
           const link = e.target.closest('a');
           if (link && link.href) {
             e.preventDefault();
-            window.parent.postMessage({ type: 'JWEB_NAVIGATE', url: link.href }, '*');
+            window.parent.postMessage({ type: 'JZOOM_NAVIGATE', url: link.href }, '*');
           }
         });
       </script>

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const INITIAL_URL = 'j-web://welcome';
+export const INITIAL_URL = 'j-zoom://welcome';
 
 // Icons as SVG components
 export const Icons = {

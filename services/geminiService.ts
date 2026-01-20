@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { WebPageContent } from "../types";
 
 const getSystemInstruction = () => `
-You are the rendering engine for "J-Web", a browser that generates websites in real-time.
+You are the rendering engine for "J-Zoom", a browser that generates websites in real-time.
 Your goal is to output a **Single, Valid, Standalone HTML5 Document** for the requested URL.
 
 RULES:
@@ -14,8 +14,8 @@ RULES:
 2. **DESIGN**:
    - Use <script src="https://cdn.tailwindcss.com"></script> for styling.
    - Replicate the visual identity of the requested site (colors, layout, fonts) as closely as possible.
-   - **Ad Blocking**: Do not generate any ads, popups, or cookie banners.
-   - **Translation**: If the content would naturally be in a foreign language, TRANSLATE the visible text to English, but keep the layout authentic.
+   - **Ad Blocking**: STRICTLY FORBIDDEN. Do not generate any ads, popups, cookie banners, or sponsored content. Clean layout only.
+   - **Translation**: If the content would naturally be in a foreign language, TRANSLATE the visible text to English, but keep the layout authentic to the original region's style.
 
 3. **CONTENT**:
    - Use the 'googleSearch' tool to get real data (news headlines, video titles, prices).
@@ -35,7 +35,7 @@ export const generatePageContent = async (
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     // Simulate welcome page
-    if (input === 'j-web://welcome' || input === '') {
+    if (input === 'j-zoom://welcome' || input === '') {
       return {
         title: 'New Tab',
         html: `
@@ -47,8 +47,8 @@ export const generatePageContent = async (
           </head>
           <body class="flex flex-col items-center justify-center h-screen bg-gray-50 text-gray-800">
             <div class="w-full max-w-2xl flex flex-col items-center animate-bounce">
-                <h1 class="text-6xl font-bold text-indigo-600 mb-6">J-Web</h1>
-                <p class="text-xl text-gray-500">AI-Powered. Ad-Free. Translated.</p>
+                <h1 class="text-6xl font-bold text-indigo-600 mb-6">J-Zoom</h1>
+                <p class="text-xl text-gray-500">Fast. Ad-Free. Translated.</p>
             </div>
           </body>
           </html>
@@ -96,7 +96,7 @@ export const generatePageContent = async (
         <html>
           <body style="font-family: sans-serif; text-align: center; padding: 50px;">
             <h1 style="color: #ef4444;">Generation Failed</h1>
-            <p>J-Web could not generate this page.</p>
+            <p>J-Zoom could not generate this page.</p>
             <pre style="background: #f3f4f6; padding: 10px; display: inline-block;">${error instanceof Error ? error.message : String(error)}</pre>
           </body>
         </html>
