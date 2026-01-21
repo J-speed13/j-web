@@ -73,18 +73,31 @@ const BrowserContent: React.FC<BrowserContentProps> = ({ tab, onNavigate }) => {
 
   // AI MODE RENDERING
   if (tab.mode === 'ai') {
-    // Inject script to capture clicks and send to parent
-    const safeHtml = tab.content?.html ? tab.content.html + `
-      <script>
-        document.body.addEventListener('click', (e) => {
-          const link = e.target.closest('a');
-          if (link && link.href) {
-            e.preventDefault();
-            window.parent.postMessage({ type: 'JZOOM_NAVIGATE', url: link.href }, '*');
-          }
-        });
-      </script>
-    ` : '';
+    let safeHtml = tab.content?.html || '';
+    
+    // Inject <base> tag to ensure relative links resolve against the simulated URL, not about:srcdoc
+    if (safeHtml) {
+      const baseTag = `<base href="${tab.url}" target="_self" />`;
+      if (safeHtml.includes('<head>')) {
+        safeHtml = safeHtml.replace('<head>', `<head>${baseTag}`);
+      } else {
+        safeHtml = `<!DOCTYPE html><html><head>${baseTag}</head>${safeHtml}</html>`;
+      }
+      
+      // Inject click handler script
+      safeHtml += `
+        <script>
+          document.body.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (link && link.href) {
+              e.preventDefault();
+              // link.href returns the resolved absolute URL thanks to <base>
+              window.parent.postMessage({ type: 'JZOOM_NAVIGATE', url: link.href }, '*');
+            }
+          });
+        </script>
+      `;
+    }
 
     return (
       <div className="w-full h-full relative bg-white">

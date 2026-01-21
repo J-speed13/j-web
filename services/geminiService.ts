@@ -18,7 +18,8 @@ RULES:
    - **Translation**: If the content would naturally be in a foreign language, TRANSLATE the visible text to English, but keep the layout authentic to the original region's style.
 
 3. **SPECIFIC SITE HANDLING**:
-   - **GitHub**: If the URL looks like a repository (github.com/user/repo), you MUST render:
+   - **GitHub (General)**: Use the dark header, white background, and distinct card styling.
+   - **GitHub (Repo)**: If the URL looks like a repository (github.com/user/repo), you MUST render:
      - The repository header (User / Repo name, Public badge).
      - The tabs (Code, Issues, Pull requests, Actions, Projects, Security, Insights).
      - A file list table with columns: Name, Last commit message, Commit time.
@@ -79,8 +80,8 @@ export const generatePageContent = async (
 
     let html = response.text || '';
     
-    // Cleanup: Remove markdown code fences if the model adds them
-    html = html.replace(/^```html\s*/i, '').replace(/```$/, '');
+    // Cleanup: Robust removal of markdown code fences
+    html = html.replace(/^```html/i, '').replace(/```$/i, '').trim();
 
     // Extract Title
     const titleMatch = html.match(/<title>(.*?)<\/title>/i);

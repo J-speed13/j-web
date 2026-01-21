@@ -8,6 +8,16 @@ import { INITIAL_URL } from './constants';
 
 const simpleId = () => Math.random().toString(36).substr(2, 9);
 
+// Sites that strictly block iframes via X-Frame-Options
+const BLOCKED_DOMAINS = [
+  'github.com', 'www.github.com',
+  'twitter.com', 'x.com',
+  'facebook.com', 'www.facebook.com',
+  'youtube.com', 'www.youtube.com',
+  'instagram.com', 'www.instagram.com',
+  'linkedin.com', 'www.linkedin.com'
+];
+
 // Helper to determine if input is a URL or search query
 const formatUrl = (input: string): string => {
   const trimmed = input.trim();
@@ -43,7 +53,7 @@ const createNewTab = (): Tab => ({
   history: [INITIAL_URL],
   historyIndex: 0,
   content: null,
-  mode: 'ai' // Default to AI for robustness
+  mode: 'ai'
 });
 
 export default function App() {
@@ -69,6 +79,17 @@ export default function App() {
     if (!tabToUpdate) return; 
 
     const finalUrl = isHistoryNav ? input : formatUrl(input);
+    let targetMode = tabToUpdate.mode;
+
+    // Smart Mode Switching: Check for blocked domains
+    try {
+      const urlObj = new URL(finalUrl);
+      if (BLOCKED_DOMAINS.includes(urlObj.hostname) && targetMode === 'live') {
+        targetMode = 'ai';
+      }
+    } catch (e) {
+      // Ignore invalid URLs
+    }
 
     // 1. Update State to Loading
     setTabs(prev => prev.map(t => {
@@ -88,17 +109,15 @@ export default function App() {
           url: finalUrl,
           title: getDisplayTitle(finalUrl, t.content),
           history: newHistory,
-          historyIndex: newIndex
+          historyIndex: newIndex,
+          mode: targetMode // Apply smart mode
         };
       }
       return t;
     }));
 
     // 2. Fetch Content based on Mode
-    const currentTab = tabs.find(t => t.id === tabId);
-    const mode = currentTab?.mode || 'ai';
-
-    if (mode === 'ai') {
+    if (targetMode === 'ai') {
       try {
         const content = await generatePageContent(finalUrl);
         updateTab(tabId, { 
