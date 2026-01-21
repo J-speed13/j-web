@@ -9,14 +9,24 @@ import { INITIAL_URL } from './constants';
 const simpleId = () => Math.random().toString(36).substr(2, 9);
 
 // Sites that strictly block iframes via X-Frame-Options
+// These will be forced to AI mode
 const BLOCKED_DOMAINS = [
-  'github.com', 'www.github.com',
-  'twitter.com', 'x.com',
-  'facebook.com', 'www.facebook.com',
-  'youtube.com', 'www.youtube.com',
-  'instagram.com', 'www.instagram.com',
-  'linkedin.com', 'www.linkedin.com'
+  'github.com',
+  'twitter.com', 
+  'x.com',
+  'facebook.com',
+  'youtube.com',
+  'instagram.com',
+  'linkedin.com',
+  'reddit.com',
+  'netflix.com',
+  'amazon.com'
 ];
+
+// Helper to check if a hostname is blocked (e.g., gist.github.com matches github.com)
+const isDomainBlocked = (hostname: string) => {
+  return BLOCKED_DOMAINS.some(domain => hostname === domain || hostname.endsWith('.' + domain));
+};
 
 // Helper to determine if input is a URL or search query
 const formatUrl = (input: string): string => {
@@ -84,8 +94,9 @@ export default function App() {
     // Smart Mode Switching: Check for blocked domains
     try {
       const urlObj = new URL(finalUrl);
-      if (BLOCKED_DOMAINS.includes(urlObj.hostname) && targetMode === 'live') {
+      if (targetMode === 'live' && isDomainBlocked(urlObj.hostname)) {
         targetMode = 'ai';
+        console.log(`Auto-switching to AI mode for blocked domain: ${urlObj.hostname}`);
       }
     } catch (e) {
       // Ignore invalid URLs

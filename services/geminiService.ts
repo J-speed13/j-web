@@ -7,9 +7,9 @@ Your goal is to output a **Single, Valid, Standalone HTML5 Document** for the re
 
 RULES:
 1. **OUTPUT FORMAT**: 
-   - Return RAW HTML only. Do NOT use markdown blocks (no \`\`\`html). Do NOT return JSON.
-   - Start with <!DOCTYPE html><html>...
-   - Include a <head> with a <title>.
+   - Return RAW HTML only. Do NOT return JSON.
+   - Start with <!DOCTYPE html><html>... and end with </html>.
+   - NO conversational text before or after the HTML.
 
 2. **DESIGN**:
    - Use <script src="https://cdn.tailwindcss.com"></script> for styling.
@@ -18,12 +18,12 @@ RULES:
    - **Translation**: If the content would naturally be in a foreign language, TRANSLATE the visible text to English, but keep the layout authentic to the original region's style.
 
 3. **SPECIFIC SITE HANDLING**:
-   - **GitHub (General)**: Use the dark header, white background, and distinct card styling.
+   - **GitHub (General)**: Use the dark header (bg-gray-900), white background, and distinct card styling. Render the hero section if on the homepage.
    - **GitHub (Repo)**: If the URL looks like a repository (github.com/user/repo), you MUST render:
      - The repository header (User / Repo name, Public badge).
-     - The tabs (Code, Issues, Pull requests, Actions, Projects, Security, Insights).
-     - A file list table with columns: Name, Last commit message, Commit time.
-     - The README.md content below the file list, styled like a markdown preview.
+     - The tabs (Code, Issues, Pull requests, Actions, Projects, Security, Insights) - 'Code' active.
+     - A file list table with columns: Icon, Name, Last commit message, Commit time. Use realistic file names (src, package.json, README.md, .gitignore).
+     - The README.md content below the file list, styled like a markdown preview (border, padding).
      - Use GitHub's color palette (white/gray background, blue links, gray borders).
    - **Social Feeds**: Render plausible posts with timestamps and usernames.
    - **Video Sites**: Render a main video player placeholder and a sidebar of recommendations.
@@ -80,8 +80,21 @@ export const generatePageContent = async (
 
     let html = response.text || '';
     
-    // Cleanup: Robust removal of markdown code fences
-    html = html.replace(/^```html/i, '').replace(/```$/i, '').trim();
+    // Cleanup: Robust extraction of HTML content
+    // Find the first occurrence of <!DOCTYPE html> or <html>
+    const docTypeIndex = html.indexOf('<!DOCTYPE html>');
+    const htmlTagIndex = html.indexOf('<html>');
+    const startIndex = docTypeIndex !== -1 ? docTypeIndex : htmlTagIndex;
+    
+    // Find the last occurrence of </html>
+    const endIndex = html.lastIndexOf('</html>');
+
+    if (startIndex !== -1 && endIndex !== -1) {
+      html = html.substring(startIndex, endIndex + 7);
+    } else {
+      // Fallback: strip code fences if explicit tags aren't found cleanly
+      html = html.replace(/```html/g, '').replace(/```/g, '').trim();
+    }
 
     // Extract Title
     const titleMatch = html.match(/<title>(.*?)<\/title>/i);
@@ -104,6 +117,7 @@ export const generatePageContent = async (
     return {
       title: "Error",
       html: `
+        <!DOCTYPE html>
         <html>
           <body style="font-family: sans-serif; text-align: center; padding: 50px;">
             <h1 style="color: #ef4444;">Generation Failed</h1>
