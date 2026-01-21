@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Icons } from '../constants';
-import { Tab } from '../types';
 
 interface AddressBarProps {
   url: string;
@@ -84,14 +83,14 @@ const AddressBar: React.FC<AddressBarProps> = ({
               type="button"
               onClick={onToggleMode}
               className={`
-                flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-colors border
+                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border shadow-sm
                 ${mode === 'ai' 
-                  ? 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100' 
-                  : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}
+                  ? 'bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-700' 
+                  : 'bg-green-600 border-green-500 text-white hover:bg-green-700'}
               `}
             >
-              <div className={`w-2 h-2 rounded-full ${mode === 'ai' ? 'bg-indigo-500 animate-pulse' : 'bg-gray-400'}`}></div>
-              {mode === 'ai' ? 'AI View' : 'Live View'}
+              <div className={`w-2 h-2 rounded-full bg-white ${mode === 'ai' ? 'animate-pulse' : ''}`}></div>
+              {mode === 'ai' ? 'AI View' : 'Real Mode'}
             </button>
           </div>
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">

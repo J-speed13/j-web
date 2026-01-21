@@ -42,8 +42,8 @@ const WelcomeScreen = ({ onSearch }: { onSearch: (q: string) => void }) => {
              <span>AI Generated</span>
            </div>
            <div className="flex items-center gap-2">
-             <div className="w-2 h-2 rounded-full bg-green-500"></div>
-             <span>Real-Time Data</span>
+             <div className="w-2 h-2 rounded-full bg-green-600"></div>
+             <span>Real Mode (Live)</span>
            </div>
         </div>
       </div>
@@ -51,7 +51,7 @@ const WelcomeScreen = ({ onSearch }: { onSearch: (q: string) => void }) => {
   );
 };
 
-const BrowserContent: React.FC<BrowserContentProps> = ({ tab, onNavigate }) => {
+export default function BrowserContent({ tab, onNavigate }: BrowserContentProps) {
   const isWelcome = tab.url === 'j-zoom://welcome' || tab.url === '';
   const [loadError, setLoadError] = useState(false);
   const aiIframeRef = useRef<HTMLIFrameElement>(null);
@@ -75,7 +75,7 @@ const BrowserContent: React.FC<BrowserContentProps> = ({ tab, onNavigate }) => {
   if (tab.mode === 'ai') {
     let safeHtml = tab.content?.html || '';
     
-    // Inject <base> tag to ensure relative links resolve against the simulated URL, not about:srcdoc
+    // Inject <base> tag to ensure relative links resolve against the simulated URL
     if (safeHtml) {
       const baseTag = `<base href="${tab.url}" target="_self" />`;
       if (safeHtml.includes('<head>')) {
@@ -85,58 +85,59 @@ const BrowserContent: React.FC<BrowserContentProps> = ({ tab, onNavigate }) => {
       }
       
       // Inject click handler script
+      // CRITICAL: Escape the closing script tag to prevent breaking the parent parser
       safeHtml += `
         <script>
           document.body.addEventListener('click', (e) => {
             const link = e.target.closest('a');
             if (link && link.href) {
               e.preventDefault();
-              // link.href returns the resolved absolute URL thanks to <base>
               window.parent.postMessage({ type: 'JZOOM_NAVIGATE', url: link.href }, '*');
             }
           });
-        </script>
+        <\/script>
       `;
     }
 
     return (
-      <div className="w-full h-full relative bg-white">
-         {/* AI Loading State */}
-         {tab.isLoading && !tab.content?.html && (
-           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-20">
-              <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-              <p className="text-gray-500 font-medium animate-pulse">Generating raw HTML...</p>
-           </div>
+      <div className="w-full h-full relative bg-white flex flex-col">
+         {/* Source Credits */}
+         {tab.content?.sourceUrls && tab.content.sourceUrls.length > 0 && (
+            <div className="bg-gray-50 border-b border-gray-100 px-4 py-2 text-xs text-gray-500 flex gap-2 overflow-x-auto whitespace-nowrap flex-shrink-0 z-30">
+               <span className="font-semibold text-gray-400">Sources:</span>
+               {tab.content.sourceUrls.map((s, i) => (
+                 <a key={i} href={s.uri} target="_blank" rel="noreferrer" className="hover:text-indigo-600 underline decoration-gray-300">
+                   {s.title || new URL(s.uri).hostname}
+                 </a>
+               ))}
+            </div>
          )}
          
-         {tab.content?.html ? (
-           <div className="flex flex-col h-full">
-              {/* Source Credits */}
-              {tab.content.sourceUrls && tab.content.sourceUrls.length > 0 && (
-                <div className="bg-gray-50 border-b border-gray-100 px-4 py-2 text-xs text-gray-500 flex gap-2 overflow-x-auto whitespace-nowrap flex-shrink-0">
-                   <span className="font-semibold text-gray-400">Sources:</span>
-                   {tab.content.sourceUrls.map((s, i) => (
-                     <a key={i} href={s.uri} target="_blank" rel="noreferrer" className="hover:text-indigo-600 underline decoration-gray-300">
-                       {s.title || new URL(s.uri).hostname}
-                     </a>
-                   ))}
-                </div>
-              )}
-              
-              {/* Use iframe with srcDoc for true HTML isolation */}
+         <div className="relative flex-1 w-full h-full">
+            {/* AI Loading State */}
+            {tab.isLoading && !tab.content?.html && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-20">
+                 <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+                 <p className="text-gray-500 font-medium animate-pulse">Generating raw HTML...</p>
+              </div>
+            )}
+            
+            {/* Iframe */}
+            {safeHtml ? (
               <iframe
                 ref={aiIframeRef}
                 srcDoc={safeHtml}
-                className="w-full flex-1 border-0"
+                className="w-full h-full border-0 block"
                 title="AI Content"
                 sandbox="allow-scripts allow-same-origin"
               />
-           </div>
-         ) : !tab.isLoading ? (
-           <div className="flex items-center justify-center h-full text-gray-400">
-             No content generated.
-           </div>
-         ) : null}
+            ) : !tab.isLoading ? (
+               <div className="flex flex-col items-center justify-center h-full text-gray-400 p-4 text-center">
+                 <p className="mb-2">No content generated.</p>
+                 <button onClick={() => onNavigate(tab.url)} className="text-indigo-600 underline">Try Refreshing</button>
+               </div>
+            ) : null}
+         </div>
       </div>
     );
   }
@@ -159,19 +160,17 @@ const BrowserContent: React.FC<BrowserContentProps> = ({ tab, onNavigate }) => {
        />
        
        {/* Helper for blocked sites like GitHub */}
-       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30">
           <p className="bg-gray-900/80 text-white px-4 py-2 rounded-full text-xs backdrop-blur-md shadow-lg border border-white/10">
-             If the page is blank, the site blocks embedding. Try <b>AI View</b>.
+             If the page is blank, the site likely blocks embedding. Switch to <b>AI View</b>.
           </p>
        </div>
 
-       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity delay-1000">
-          <p className="bg-black/75 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
-             Real Site Mode
+       <div className="absolute top-6 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity delay-1000 z-30">
+          <p className="bg-green-600/90 text-white px-4 py-1 rounded-full text-xs font-semibold backdrop-blur-sm shadow-md">
+             Real Mode Active
           </p>
        </div>
     </div>
   );
-};
-
-export default BrowserContent;
+}

@@ -9,7 +9,7 @@ import { INITIAL_URL } from './constants';
 const simpleId = () => Math.random().toString(36).substr(2, 9);
 
 // Sites that strictly block iframes via X-Frame-Options
-// These will be forced to AI mode
+// These will be forced to AI mode by default, but can be overridden manually
 const BLOCKED_DOMAINS = [
   'github.com',
   'twitter.com', 
@@ -23,7 +23,7 @@ const BLOCKED_DOMAINS = [
   'amazon.com'
 ];
 
-// Helper to check if a hostname is blocked (e.g., gist.github.com matches github.com)
+// Helper to check if a hostname is blocked
 const isDomainBlocked = (hostname: string) => {
   return BLOCKED_DOMAINS.some(domain => hostname === domain || hostname.endsWith('.' + domain));
 };
@@ -84,22 +84,38 @@ export default function App() {
     setTabs(prev => prev.map(tab => tab.id === id ? { ...tab, ...updates } : tab));
   };
 
-  const handleNavigate = useCallback(async (tabId: string, input: string, isHistoryNav = false) => {
+  const handleNavigate = useCallback(async (
+    tabId: string, 
+    input: string, 
+    isHistoryNav = false, 
+    forceMode?: 'ai' | 'live'
+  ) => {
+    // Note: We use the function form of setTabs inside here implicitly via updateTab if we needed latest state, 
+    // but here we need the tab object to determine logic. 
+    // Since this callback depends on [tabs], it receives the tabs state at the time of creation.
+    // For rapid updates (like toggle), passing forceMode ensures we don't rely on stale tab.mode.
+    
+    // However, to ensure we get the absolute latest tab state for logic that depends on other tab properties,
+    // we should ideally use a functional update pattern or a ref, but given the structure, 
+    // relying on the dependency array with [tabs] is acceptable for a browser simulator.
+    
     const tabToUpdate = tabs.find(t => t.id === tabId);
     if (!tabToUpdate) return; 
 
     const finalUrl = isHistoryNav ? input : formatUrl(input);
-    let targetMode = tabToUpdate.mode;
+    let targetMode = forceMode || tabToUpdate.mode;
 
-    // Smart Mode Switching: Check for blocked domains
-    try {
-      const urlObj = new URL(finalUrl);
-      if (targetMode === 'live' && isDomainBlocked(urlObj.hostname)) {
-        targetMode = 'ai';
-        console.log(`Auto-switching to AI mode for blocked domain: ${urlObj.hostname}`);
+    // Smart Mode Switching: Only apply if NOT forcing a mode manually
+    if (!forceMode) {
+      try {
+        const urlObj = new URL(finalUrl);
+        if (targetMode === 'live' && isDomainBlocked(urlObj.hostname)) {
+          targetMode = 'ai';
+          console.log(`Auto-switching to AI mode for blocked domain: ${urlObj.hostname}`);
+        }
+      } catch (e) {
+        // Ignore invalid URLs
       }
-    } catch (e) {
-      // Ignore invalid URLs
     }
 
     // 1. Update State to Loading
@@ -121,7 +137,7 @@ export default function App() {
           title: getDisplayTitle(finalUrl, t.content),
           history: newHistory,
           historyIndex: newIndex,
-          mode: targetMode // Apply smart mode
+          mode: targetMode // Apply smart mode or force mode
         };
       }
       return t;
@@ -170,9 +186,8 @@ export default function App() {
 
   const handleToggleMode = () => {
     const newMode = activeTab.mode === 'ai' ? 'live' : 'ai';
-    updateTab(activeTabId, { mode: newMode });
-    // Reload content with new mode
-    handleNavigate(activeTabId, activeTab.url, true);
+    // We pass newMode as forceMode to bypass the blocked domain check
+    handleNavigate(activeTabId, activeTab.url, true, newMode);
   };
 
   const handleNewTab = () => {

@@ -2,41 +2,39 @@ import { GoogleGenAI } from "@google/genai";
 import { WebPageContent } from "../types";
 
 const getSystemInstruction = () => `
-You are the rendering engine for "J-Zoom", a browser that generates websites in real-time.
-Your goal is to output a **Single, Valid, Standalone HTML5 Document** for the requested URL.
+You are the J-Zoom Rendering Engine.
+Your ONE and ONLY task is to generate valid, standalone HTML5 code for the requested URL.
 
-RULES:
-1. **OUTPUT FORMAT**: 
-   - Return RAW HTML only. Do NOT return JSON.
-   - Start with <!DOCTYPE html><html>... and end with </html>.
-   - NO conversational text before or after the HTML.
+CRITICAL OUTPUT RULES:
+1. **RAW HTML ONLY**: Do NOT wrap the code in markdown blocks (e.g. no \`\`\`html).
+2. **NO CONVERSATION**: Do not include "Here is the code" or any other text.
+3. **START**: Your response MUST start with \`<!DOCTYPE html>\`.
+4. **END**: Your response MUST end with \`</html>\`.
 
-2. **DESIGN**:
-   - Use <script src="https://cdn.tailwindcss.com"></script> for styling.
-   - Replicate the visual identity of the requested site (colors, layout, fonts) as closely as possible.
-   - **Ad Blocking**: STRICTLY FORBIDDEN. Do not generate any ads, popups, cookie banners, or sponsored content. Clean layout only.
-   - **Translation**: If the content would naturally be in a foreign language, TRANSLATE the visible text to English, but keep the layout authentic to the original region's style.
+DESIGN & TECH STACK:
+- **Tailwind CSS**: Must include <script src="https://cdn.tailwindcss.com"><\/script> in <head>.
+- **Icons**: Use Emoji symbols (📁, 📄, 🔍, 🔔) instead of external SVGs/images to ensure visibility.
+- **Layout**: Replicate the target site's layout, colors, and typography exactly.
+- **Images**: Use placeholder service: https://picsum.photos/seed/{random}/200/200.
 
-3. **SPECIFIC SITE HANDLING**:
-   - **GitHub (General)**: Use the dark header (bg-gray-900), white background, and distinct card styling. Render the hero section if on the homepage.
-   - **GitHub (Repo)**: If the URL looks like a repository (github.com/user/repo), you MUST render:
-     - The repository header (User / Repo name, Public badge).
-     - The tabs (Code, Issues, Pull requests, Actions, Projects, Security, Insights) - 'Code' active.
-     - A file list table with columns: Icon, Name, Last commit message, Commit time. Use realistic file names (src, package.json, README.md, .gitignore).
-     - The README.md content below the file list, styled like a markdown preview (border, padding).
-     - Use GitHub's color palette (white/gray background, blue links, gray borders).
-   - **Social Feeds**: Render plausible posts with timestamps and usernames.
-   - **Video Sites**: Render a main video player placeholder and a sidebar of recommendations.
+SITE SPECIFIC INSTRUCTIONS:
+- **GitHub**:
+  - Header: Dark gray (bg-gray-900), white text. Search bar, Bell icon, Avatar.
+  - Navigation: Tabs (Code, Issues, Pull Requests) with 'Code' selected.
+  - Repo Info: Breadcrumb (User / Repo), Public badge (rounded, border).
+  - File List: Table style. Header (Name, Last commit, Date). Rows with Emoji icon, Name (blue), Commit msg (gray), Time.
+  - README: A bordered container below files. "README.md" header. Content looks like rendered markdown.
+  - Colors: bg-white, text-gray-900, link-blue-600, border-gray-300.
 
-4. **CONTENT**:
-   - Use the 'googleSearch' tool to get real data (news headlines, video titles, prices, repo descriptions).
-   - Use meaningful <a> tags: <a href="https://example.com/page">Link</a>.
+- **Blocked Sites (YouTube, X, etc)**:
+  - Create a functional-looking mock.
+  - YouTube: Video player rectangle (black), Sidebar with video thumbnails.
+  - X/Twitter: Feed layout, Tweet cards.
 
-5. **IMAGES**:
-   - Use generic placeholders: https://picsum.photos/seed/{seed}/300/200
-   - Do NOT use real image URLs unless you are 100% sure they are static CDN links (like logos).
+AD BLOCKING:
+- No ads, no cookie banners, no popups.
 
-Generate the file now.
+Translate all content to English.
 `;
 
 export const generatePageContent = async (
@@ -45,7 +43,6 @@ export const generatePageContent = async (
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    // Simulate welcome page
     if (input === 'j-zoom://welcome' || input === '') {
       return {
         title: 'New Tab',
@@ -54,7 +51,7 @@ export const generatePageContent = async (
           <html>
           <head>
             <title>New Tab</title>
-            <script src="https://cdn.tailwindcss.com"></script>
+            <script src="https://cdn.tailwindcss.com"><\/script>
           </head>
           <body class="flex flex-col items-center justify-center h-screen bg-gray-50 text-gray-800">
             <div class="w-full max-w-2xl flex flex-col items-center animate-bounce">
@@ -80,27 +77,52 @@ export const generatePageContent = async (
 
     let html = response.text || '';
     
-    // Cleanup: Robust extraction of HTML content
-    // Find the first occurrence of <!DOCTYPE html> or <html>
-    const docTypeIndex = html.indexOf('<!DOCTYPE html>');
-    const htmlTagIndex = html.indexOf('<html>');
-    const startIndex = docTypeIndex !== -1 ? docTypeIndex : htmlTagIndex;
+    // CLEANUP LOGIC:
+    // 1. Remove Markdown Code Blocks completely
+    html = html.replace(/```html/gi, '').replace(/```/g, '');
+
+    // 2. Find the true start and end of HTML
+    const docTypeIndex = html.indexOf('<!DOCTYPE');
+    const htmlTagIndex = html.indexOf('<html');
     
-    // Find the last occurrence of </html>
+    // Determine start index (prefer doctype)
+    let startIndex = 0;
+    if (docTypeIndex !== -1) startIndex = docTypeIndex;
+    else if (htmlTagIndex !== -1) startIndex = htmlTagIndex;
+
     const endIndex = html.lastIndexOf('</html>');
 
-    if (startIndex !== -1 && endIndex !== -1) {
+    if (endIndex !== -1) {
       html = html.substring(startIndex, endIndex + 7);
     } else {
-      // Fallback: strip code fences if explicit tags aren't found cleanly
-      html = html.replace(/```html/g, '').replace(/```/g, '').trim();
+      // If no end tag, just take from start
+      html = html.substring(startIndex);
+    }
+
+    html = html.trim();
+
+    // 3. Fallback if HTML is still not valid
+    if (html.length < 50 || (!html.includes('<body') && !html.includes('<div'))) {
+        html = `
+            <!DOCTYPE html>
+            <html>
+            <head><script src="https://cdn.tailwindcss.com"><\/script></head>
+            <body class="p-10 text-center">
+                <h1 class="text-2xl font-bold text-gray-800">Content Generation Incomplete</h1>
+                <p class="text-gray-600">The AI response was not valid HTML.</p>
+                <div class="mt-4 p-4 bg-gray-100 rounded text-left text-xs font-mono overflow-auto max-h-96">
+                    ${response.text?.replace(/</g, '&lt;')}
+                </div>
+            </body>
+            </html>
+        `;
     }
 
     // Extract Title
     const titleMatch = html.match(/<title>(.*?)<\/title>/i);
     const title = titleMatch ? titleMatch[1] : input;
 
-    // Extract Grounding Data (Real Source URLs)
+    // Extract Grounding Data
     const sourceUrls = response.candidates?.[0]?.groundingMetadata?.groundingChunks
       ?.map(chunk => chunk.web)
       .filter(web => web !== undefined && web !== null)
